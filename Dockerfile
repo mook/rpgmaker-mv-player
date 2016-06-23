@@ -25,4 +25,4 @@ RUN true \
 
 ADD rpgmaker-mv-player entrypoint.sh /rpgmaker-mv/
 
-ENTRYPOINT ["/bin/bash", "/rpgmaker-mv/entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/rpgmaker-mv/entrypoint.sh"]
