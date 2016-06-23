@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# Note that this is run where the game is, not where the script is
+
+DATA_DIR="$PWD"
+
+if test -d "$(dirname "${DATA_DIR}")/www" ; then
+    DATA_DIR="$(dirname "${DATA_DIR}")"
+fi
+
+if ! test -e "${DATA_DIR}/package.json" ; then
+    printf "\033[0;1;31mPlease run $(basename "${0}") from the game directory\033[0m\n"
+    exit 1
+fi
+
+mkdir -p "${DATA_DIR}/save"
+
+eval $(pax11publish -i)
+pulse_socket="$(echo ${PULSE_SERVER} | tr ' ' '\n' | grep unix: | cut -d: -f2-)"
+
+docker run --rm \
+    --env XAUTHDATA="$(/usr/bin/xauth nextract - ${DISPLAY})" \
+    --env DISPLAY \
+    --hostname $(hostname) \
+    --volume /tmp/.X11-unix:/tmp/.X11-unix:ro \
+    --volume "${DATA_DIR}/www:/rpgmaker-mv/www:ro" \
+    --volume "${DATA_DIR}/package.json:/rpgmaker-mv/package.json:ro" \
+    --volume "${DATA_DIR}/save:/rpgmaker-mv/save:rw" \
+    --user 1000 \
+    --net none \
+    --volume /dev/null:/etc/resolv.conf:ro \
+    --env PULSE_SERVER=/run/pulse/native \
+    --env PULSE_COOKIE=/run/pulse/cookie \
+    --volume ${pulse_socket}:/run/pulse/native:rw \
+    --volume ${XDG_CONFIG_HOME:-${HOME}/.config}/pulse/cookie:/run/pulse/cookie:ro \
+    mook/rpgmaker-mv-player
